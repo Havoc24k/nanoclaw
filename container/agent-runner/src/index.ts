@@ -446,7 +446,9 @@ async function runQuery(
         'TeamCreate', 'TeamDelete', 'SendMessage',
         'TodoWrite', 'ToolSearch', 'Skill',
         'NotebookEdit',
-        'mcp__nanoclaw__*'
+        'mcp__nanoclaw__*',
+        'mcp__asana__*',
+        'mcp__clockify__*'
       ],
       env: sdkEnv,
       permissionMode: 'bypassPermissions',
@@ -462,6 +464,24 @@ async function runQuery(
             NANOCLAW_IS_MAIN: containerInput.isMain ? '1' : '0',
           },
         },
+        ...(process.env.ASANA_ACCESS_TOKEN ? {
+          asana: {
+            command: 'npx',
+            args: ['-y', '@anthropic-ai/mcp-server-asana'],
+            env: {
+              ASANA_ACCESS_TOKEN: process.env.ASANA_ACCESS_TOKEN,
+            },
+          },
+        } : {}),
+        ...(process.env.CLOCKIFY_API_KEY ? {
+          clockify: {
+            command: 'npx',
+            args: ['-y', 'mcp_clockify@latest'],
+            env: {
+              CLOCKIFY_API_KEY: process.env.CLOCKIFY_API_KEY,
+            },
+          },
+        } : {}),
       },
       hooks: {
         PreCompact: [{ hooks: [createPreCompactHook(containerInput.assistantName)] }],

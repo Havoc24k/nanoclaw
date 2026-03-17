@@ -321,14 +321,49 @@ export class WhatsAppChannel implements Channel {
     });
   }
 
+  /**
+   * Convert Markdown to WhatsApp-compatible formatting.
+   * WhatsApp supports: *bold*, _italic_, ~strikethrough~, ```code```, `mono`
+   */
+  private static markdownToWhatsApp(text: string): string {
+    let result = text;
+
+    // Remove heading markers (## Title → *Title*)
+    result = result.replace(/^#{1,6}\s+(.+)$/gm, '*$1*');
+
+    // Convert markdown links [text](url) → text (url)
+    result = result.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1 ($2)');
+
+    // Convert bold **text** or __text__ → *text*
+    // Must come before italic to avoid conflict
+    result = result.replace(/\*\*(.+?)\*\*/g, '*$1*');
+    result = result.replace(/__(.+?)__/g, '*$1*');
+
+    // Convert italic *text* left by markdown (single *) is already WhatsApp italic-ish
+    // but _text_ is the WhatsApp standard for italic
+    // Single underscores _text_ already work in WhatsApp
+
+    // Convert ~~strikethrough~~ → ~strikethrough~
+    result = result.replace(/~~(.+?)~~/g, '~$1~');
+
+    // Convert horizontal rules (---, ***, ___) → line
+    result = result.replace(/^[-*_]{3,}$/gm, '───────────');
+
+    // Convert > blockquotes to indented text
+    result = result.replace(/^>\s?(.*)$/gm, '▎ $1');
+
+    return result;
+  }
+
   async sendMessage(jid: string, text: string): Promise<void> {
     // Prefix bot messages with assistant name so users know who's speaking.
     // On a shared number, prefix is also needed in DMs (including self-chat)
     // to distinguish bot output from user messages.
     // Skip only when the assistant has its own dedicated phone number.
+    const formatted = WhatsAppChannel.markdownToWhatsApp(text);
     const prefixed = ASSISTANT_HAS_OWN_NUMBER
-      ? text
-      : `${ASSISTANT_NAME}: ${text}`;
+      ? formatted
+      : `${ASSISTANT_NAME}: ${formatted}`;
 
     if (!this.connected) {
       this.outgoingQueue.push({ jid, text: prefixed });

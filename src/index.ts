@@ -856,6 +856,22 @@ async function main(): Promise<void> {
   await statusTracker.recover();
   queue.setProcessMessagesFn(processGroupMessages);
   recoverPendingMessages();
+
+  // Send startup notification to main group after a delay to ensure
+  // WhatsApp has completed initial sync (takes ~20s on connect).
+  setTimeout(() => {
+    for (const [jid, group] of Object.entries(registeredGroups)) {
+      if (group.isMain) {
+        const ch = findChannel(channels, jid);
+        if (ch) {
+          ch.sendMessage(jid, '[system] NanoClaw started.').catch((err) =>
+            logger.warn({ err, jid }, 'Failed to send startup message'),
+          );
+        }
+        break;
+      }
+    }
+  }, 30_000);
   startMessageLoop().catch((err) => {
     logger.fatal({ err }, 'Message loop crashed unexpectedly');
     process.exit(1);

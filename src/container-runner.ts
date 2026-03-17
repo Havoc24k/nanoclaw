@@ -26,8 +26,12 @@ import {
   stopContainer,
 } from './container-runtime.js';
 import { detectAuthMode } from './credential-proxy.js';
+import { readEnvFile } from './env.js';
 import { validateAdditionalMounts } from './mount-security.js';
 import { RegisteredGroup } from './types.js';
+
+// Load MCP credentials from .env (not in process.env to avoid leaking to all children)
+const mcpEnv = readEnvFile(['ASANA_ACCESS_TOKEN', 'CLOCKIFY_API_KEY']);
 
 // Sentinel markers for robust output parsing (must match agent-runner)
 const OUTPUT_START_MARKER = '---NANOCLAW_OUTPUT_START---';
@@ -240,6 +244,14 @@ function buildContainerArgs(
     args.push('-e', 'ANTHROPIC_API_KEY=placeholder');
   } else {
     args.push('-e', 'CLAUDE_CODE_OAUTH_TOKEN=placeholder');
+  }
+
+  // Pass through optional MCP credentials from .env
+  if (mcpEnv.ASANA_ACCESS_TOKEN) {
+    args.push('-e', `ASANA_ACCESS_TOKEN=${mcpEnv.ASANA_ACCESS_TOKEN}`);
+  }
+  if (mcpEnv.CLOCKIFY_API_KEY) {
+    args.push('-e', `CLOCKIFY_API_KEY=${mcpEnv.CLOCKIFY_API_KEY}`);
   }
 
   // Runtime-specific args for host gateway resolution
