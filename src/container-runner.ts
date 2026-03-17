@@ -31,7 +31,7 @@ import { validateAdditionalMounts } from './mount-security.js';
 import { RegisteredGroup } from './types.js';
 
 // Load MCP credentials from .env (not in process.env to avoid leaking to all children)
-const mcpEnv = readEnvFile(['ASANA_ACCESS_TOKEN', 'CLOCKIFY_API_KEY']);
+const mcpEnv = readEnvFile(['ASANA_ACCESS_TOKEN', 'CLOCKIFY_API_KEY', 'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'AWS_DEFAULT_REGION']);
 
 // Sentinel markers for robust output parsing (must match agent-runner)
 const OUTPUT_START_MARKER = '---NANOCLAW_OUTPUT_START---';
@@ -252,6 +252,15 @@ function buildContainerArgs(
   }
   if (mcpEnv.CLOCKIFY_API_KEY) {
     args.push('-e', `CLOCKIFY_API_KEY=${mcpEnv.CLOCKIFY_API_KEY}`);
+  }
+  if (mcpEnv.AWS_ACCESS_KEY_ID) {
+    args.push('-e', `AWS_ACCESS_KEY_ID=${mcpEnv.AWS_ACCESS_KEY_ID}`);
+  }
+  if (mcpEnv.AWS_SECRET_ACCESS_KEY) {
+    args.push('-e', `AWS_SECRET_ACCESS_KEY=${mcpEnv.AWS_SECRET_ACCESS_KEY}`);
+  }
+  if (mcpEnv.AWS_DEFAULT_REGION) {
+    args.push('-e', `AWS_DEFAULT_REGION=${mcpEnv.AWS_DEFAULT_REGION}`);
   }
 
   // Runtime-specific args for host gateway resolution

@@ -448,7 +448,8 @@ async function runQuery(
         'NotebookEdit',
         'mcp__nanoclaw__*',
         'mcp__asana__*',
-        'mcp__clockify__*'
+        'mcp__clockify__*',
+        'mcp__s3__*'
       ],
       env: sdkEnv,
       permissionMode: 'bypassPermissions',
@@ -479,6 +480,17 @@ async function runQuery(
             args: ['-y', 'mcp_clockify@latest'],
             env: {
               CLOCKIFY_API_KEY: process.env.CLOCKIFY_API_KEY,
+            },
+          },
+        } : {}),
+        ...(process.env.AWS_ACCESS_KEY_ID ? {
+          s3: {
+            command: 'npx',
+            args: ['-y', 'mcp-server-s3'],
+            env: {
+              AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
+              AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY || '',
+              ...(process.env.AWS_DEFAULT_REGION ? { AWS_DEFAULT_REGION: process.env.AWS_DEFAULT_REGION } : {}),
             },
           },
         } : {}),
