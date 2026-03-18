@@ -449,7 +449,8 @@ async function runQuery(
         'mcp__nanoclaw__*',
         'mcp__asana__*',
         'mcp__clockify__*',
-        'mcp__s3__*'
+        'mcp__s3__*',
+        'mcp__ollama__*'
       ],
       env: sdkEnv,
       permissionMode: 'bypassPermissions',
@@ -494,6 +495,10 @@ async function runQuery(
             },
           },
         } : {}),
+        ollama: {
+          command: 'node',
+          args: [path.join(path.dirname(mcpServerPath), 'ollama-mcp-stdio.js')],
+        },
       },
       hooks: {
         PreCompact: [{ hooks: [createPreCompactHook(containerInput.assistantName)] }],
