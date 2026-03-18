@@ -124,7 +124,10 @@ export function startIpcWatcher(deps: IpcDeps): void {
                   );
 
                   // Security: ensure the resolved path is under the group directory
-                  if (!resolvedPath.startsWith(groupDir + path.sep) && resolvedPath !== groupDir) {
+                  if (
+                    !resolvedPath.startsWith(groupDir + path.sep) &&
+                    resolvedPath !== groupDir
+                  ) {
                     logger.warn(
                       { filePath: data.filePath, sourceGroup },
                       'IPC attachment path traversal attempt blocked',

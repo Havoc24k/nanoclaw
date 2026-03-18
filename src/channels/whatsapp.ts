@@ -421,8 +421,7 @@ export class WhatsAppChannel implements Channel {
       };
     } else {
       // Send as document
-      const mimetype =
-        options?.mimetype || 'application/octet-stream';
+      const mimetype = options?.mimetype || 'application/octet-stream';
       msg = { document: buffer, mimetype, fileName, caption };
     }
 
@@ -436,7 +435,10 @@ export class WhatsAppChannel implements Channel {
 
     try {
       await this.sock.sendMessage(jid, msg);
-      logger.info({ jid, fileName, type: Object.keys(msg)[0] }, 'Attachment sent');
+      logger.info(
+        { jid, fileName, type: Object.keys(msg)[0] },
+        'Attachment sent',
+      );
     } catch (err) {
       logger.error({ jid, fileName, err }, 'Failed to send attachment');
       throw err;
