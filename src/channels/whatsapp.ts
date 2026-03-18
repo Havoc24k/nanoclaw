@@ -386,6 +386,63 @@ export class WhatsAppChannel implements Channel {
     }
   }
 
+  async sendAttachment(
+    jid: string,
+    filePath: string,
+    options?: { caption?: string; mimetype?: string; fileName?: string },
+  ): Promise<void> {
+    if (!fs.existsSync(filePath)) {
+      logger.warn({ jid, filePath }, 'Attachment file not found');
+      throw new Error(`Attachment file not found: ${filePath}`);
+    }
+
+    const buffer = fs.readFileSync(filePath);
+    const fileName = options?.fileName || path.basename(filePath);
+    const ext = path.extname(filePath).toLowerCase();
+    const caption = options?.caption;
+
+    // Determine message type based on file extension
+    const imageExts = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+    const videoExts = ['.mp4', '.3gp', '.mov'];
+    const audioExts = ['.mp3', '.ogg', '.m4a', '.opus', '.wav'];
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let msg: any;
+
+    if (imageExts.includes(ext)) {
+      msg = { image: buffer, caption };
+    } else if (videoExts.includes(ext)) {
+      msg = { video: buffer, caption };
+    } else if (audioExts.includes(ext)) {
+      msg = {
+        audio: buffer,
+        mimetype: options?.mimetype || 'audio/mpeg',
+        ptt: ext === '.ogg' || ext === '.opus',
+      };
+    } else {
+      // Send as document
+      const mimetype =
+        options?.mimetype || 'application/octet-stream';
+      msg = { document: buffer, mimetype, fileName, caption };
+    }
+
+    if (!this.connected) {
+      logger.warn(
+        { jid, fileName },
+        'WA disconnected, cannot send attachment (no queue support for media)',
+      );
+      throw new Error('Not connected to WhatsApp');
+    }
+
+    try {
+      await this.sock.sendMessage(jid, msg);
+      logger.info({ jid, fileName, type: Object.keys(msg)[0] }, 'Attachment sent');
+    } catch (err) {
+      logger.error({ jid, fileName, err }, 'Failed to send attachment');
+      throw err;
+    }
+  }
+
   async sendReaction(
     chatJid: string,
     messageKey: {

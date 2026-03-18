@@ -90,6 +90,16 @@ export interface Channel {
   setTyping?(jid: string, isTyping: boolean): Promise<void>;
   // Optional: sync group/chat names from the platform.
   syncGroups?(force: boolean): Promise<void>;
+  // Optional: send file/media attachments
+  sendAttachment?(
+    jid: string,
+    filePath: string,
+    options?: {
+      caption?: string;
+      mimetype?: string;
+      fileName?: string;
+    },
+  ): Promise<void>;
   // Optional: reaction support
   sendReaction?(
     chatJid: string,

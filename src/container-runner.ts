@@ -31,7 +31,13 @@ import { validateAdditionalMounts } from './mount-security.js';
 import { RegisteredGroup } from './types.js';
 
 // Load MCP credentials from .env (not in process.env to avoid leaking to all children)
-const mcpEnv = readEnvFile(['ASANA_ACCESS_TOKEN', 'CLOCKIFY_API_KEY', 'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'AWS_DEFAULT_REGION']);
+const mcpEnv = readEnvFile([
+  'ASANA_ACCESS_TOKEN',
+  'CLOCKIFY_API_KEY',
+  'AWS_ACCESS_KEY_ID',
+  'AWS_SECRET_ACCESS_KEY',
+  'AWS_DEFAULT_REGION',
+]);
 
 // Sentinel markers for robust output parsing (must match agent-runner)
 const OUTPUT_START_MARKER = '---NANOCLAW_OUTPUT_START---';

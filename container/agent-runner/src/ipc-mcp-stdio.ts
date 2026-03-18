@@ -68,6 +68,87 @@ server.tool(
 );
 
 server.tool(
+  'send_attachment',
+  `Send a file or image as an attachment in the chat. The file must exist in your workspace (/workspace/group/).
+
+Supported types:
+• Images (.jpg, .png, .gif, .webp) — sent as image messages
+• Videos (.mp4, .3gp) — sent as video messages
+• Audio (.mp3, .ogg, .m4a) — sent as audio messages
+• Documents (any other file) — sent as document attachments
+
+Use this for sharing files, images, PDFs, reports, or any media the user requests.`,
+  {
+    file_path: z
+      .string()
+      .describe(
+        'Path to the file relative to /workspace/group/ (e.g., "attachments/report.pdf", "output/chart.png")',
+      ),
+    caption: z
+      .string()
+      .optional()
+      .describe('Optional caption to send with the attachment'),
+    file_name: z
+      .string()
+      .optional()
+      .describe(
+        'Override display filename (defaults to the original filename)',
+      ),
+  },
+  async (args) => {
+    const fullPath = path.join('/workspace/group', args.file_path);
+
+    // Validate the file exists before writing IPC
+    if (!fs.existsSync(fullPath)) {
+      return {
+        content: [
+          {
+            type: 'text' as const,
+            text: `File not found: ${args.file_path}. Make sure the file exists in /workspace/group/.`,
+          },
+        ],
+        isError: true,
+      };
+    }
+
+    // Security: ensure resolved path is under /workspace/group/
+    const resolved = path.resolve(fullPath);
+    if (!resolved.startsWith('/workspace/group/')) {
+      return {
+        content: [
+          {
+            type: 'text' as const,
+            text: 'Invalid file path: must be within /workspace/group/.',
+          },
+        ],
+        isError: true,
+      };
+    }
+
+    const data: Record<string, string | undefined> = {
+      type: 'attachment',
+      chatJid,
+      filePath: args.file_path,
+      caption: args.caption || undefined,
+      fileName: args.file_name || path.basename(args.file_path),
+      groupFolder,
+      timestamp: new Date().toISOString(),
+    };
+
+    writeIpcFile(MESSAGES_DIR, data);
+
+    return {
+      content: [
+        {
+          type: 'text' as const,
+          text: `Attachment sent: ${args.file_name || path.basename(args.file_path)}`,
+        },
+      ],
+    };
+  },
+);
+
+server.tool(
   'react_to_message',
   'React to a message with an emoji. Omit message_id to react to the most recent message in the chat.',
   {
