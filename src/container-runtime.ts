@@ -9,7 +9,7 @@ import os from 'os';
 import { logger } from './logger.js';
 
 /** The container runtime binary name. */
-export const CONTAINER_RUNTIME_BIN = 'container';
+export const CONTAINER_RUNTIME_BIN = 'docker';
 
 /** Hostname containers use to reach the host machine. */
 export const CONTAINER_HOST_GATEWAY = 'host.docker.internal';
@@ -68,12 +68,12 @@ export function stopContainer(name: string): string {
 /** Ensure the container runtime is running, starting it if needed. */
 export function ensureContainerRuntimeRunning(): void {
   try {
-    execSync(`${CONTAINER_RUNTIME_BIN} system status`, { stdio: 'pipe' });
+    execSync(`${CONTAINER_RUNTIME_BIN} info`, { stdio: 'pipe' });
     logger.debug('Container runtime already running');
   } catch {
     logger.info('Starting container runtime...');
     try {
-      execSync(`${CONTAINER_RUNTIME_BIN} system start`, {
+      execSync(`sudo systemctl start docker`, {
         stdio: 'pipe',
         timeout: 30000,
       });
@@ -93,10 +93,10 @@ export function ensureContainerRuntimeRunning(): void {
         '║  Agents cannot run without a container runtime. To fix:        ║',
       );
       console.error(
-        '║  1. Ensure Apple Container is installed                        ║',
+        '║  1. Ensure Docker is installed                                 ║',
       );
       console.error(
-        '║  2. Run: container system start                                ║',
+        '║  2. Run: sudo systemctl start docker                          ║',
       );
       console.error(
         '║  3. Restart NanoClaw                                           ║',
@@ -112,18 +112,17 @@ export function ensureContainerRuntimeRunning(): void {
 /** Kill orphaned NanoClaw containers from previous runs. */
 export function cleanupOrphans(): void {
   try {
-    const output = execSync(`${CONTAINER_RUNTIME_BIN} ls --format json`, {
-      stdio: ['pipe', 'pipe', 'pipe'],
-      encoding: 'utf-8',
-    });
-    const containers: { status: string; configuration: { id: string } }[] =
-      JSON.parse(output || '[]');
-    const orphans = containers
-      .filter(
-        (c) =>
-          c.status === 'running' && c.configuration.id.startsWith('nanoclaw-'),
-      )
-      .map((c) => c.configuration.id);
+    const output = execSync(
+      `${CONTAINER_RUNTIME_BIN} ps --filter "name=nanoclaw-" --format "{{.Names}}"`,
+      {
+        stdio: ['pipe', 'pipe', 'pipe'],
+        encoding: 'utf-8',
+      },
+    );
+    const orphans = output
+      .trim()
+      .split('\n')
+      .filter((name) => name.startsWith('nanoclaw-'));
     for (const name of orphans) {
       try {
         execSync(stopContainer(name), { stdio: 'pipe' });
